@@ -128,7 +128,45 @@ void showCurrentPhysicalMemoryState()
   }
 
   char c;
-  printf("\n\n Escreva alguma letra e aperte enter para voltar a tela inicial.");
+  printf("\n\n Escreva alguma letra e aperte enter para voltar a tela inicial.\n");
+  scanf(" %c", &c);
+}
+
+ProcessDescriptor *findProcessDescriptorById(int id)
+{
+  for (int i = 0; i < MAX_PROCESSES_QTD; i++)
+  {
+    if (processDescriptorList[i].id == id)
+      return &processDescriptorList[i];
+  }
+
+  return NULL;
+}
+
+void showProcessMemoryState()
+{
+  int processIdentifier;
+
+  printf("Digite o identificador do processo:\n");
+  scanf("%d", &processIdentifier);
+
+  ProcessDescriptor *processDescriptor = findProcessDescriptorById(processIdentifier);
+  if (processDescriptor == NULL)
+  {
+    printf("Processo não encontrado.\n");
+    return;
+  }
+
+  printf("Tamanho do processo: %d Bytes\n\n", processDescriptor->numberOfPages * pageSizeInBytes);
+  printf("Tabela de páginas (página: quadro)\n");
+
+  for (int pageIndex = 0; pageIndex < processDescriptor->numberOfPages; pageIndex++)
+  {
+    printf("Página %d: %d\n", pageIndex, processDescriptor->pageMap[pageIndex]);
+  }
+
+  char c;
+  printf("\n\n Escreva alguma letra e aperte enter para voltar a tela inicial.\n");
   scanf(" %c", &c);
 }
 
@@ -161,6 +199,7 @@ int main(int argc, char *argv[])
     int promptAnswer;
 
     scanf("%d", &promptAnswer);
+    printf("\n\n");
 
     switch (promptAnswer)
     {
@@ -173,7 +212,7 @@ int main(int argc, char *argv[])
       break;
     }
     case 3:
-
+      showProcessMemoryState();
       break;
     case 4:
       exit(1);
