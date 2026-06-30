@@ -63,6 +63,7 @@ void fillRandomCharacters(char *address, int maxOffset)
 
 void createNewProcess()
 {
+  int freePhysicalMemory = (numberOfFrames - numberOfUsedFrames) * pageSizeInBytes;
   int identifier, memoryNeededInBytes;
   bool validAnswer = false;
 
@@ -73,8 +74,18 @@ void createNewProcess()
 
     if (memoryNeededInBytes > maximumProcessSizeInBytes)
     {
-      printf("A memória solicitada ao processo não pode ser maior que a memória máxima definida na inicialização do programa [%d Bytes].\n", maximumProcessSizeInBytes);
+      printf("A memória solicitada ao processo não pode ser maior que a memória máxima definida na inicialização do programa [%d Bytes]. Tente novamente\n", maximumProcessSizeInBytes);
+
       validAnswer = false;
+      continue;
+    }
+    else if (memoryNeededInBytes > freePhysicalMemory)
+    {
+      printf("Memória física restante: %d", freePhysicalMemory);
+      printf("Não há quadros suficientes para alocar o seu processo inteiramente na memória, e esse gerenciador tem uma memória virtual paia no momento :/. Tente novamente com um valor menor.\n");
+
+      validAnswer = false;
+      continue;
     }
 
     validAnswer = true;
