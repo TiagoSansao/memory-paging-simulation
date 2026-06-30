@@ -15,6 +15,7 @@ unsigned int maximumProcessSizeInBytes;
 
 char *physicalMemory;
 unsigned int numberOfFrames;
+unsigned int numberOfUsedFrames;
 char *frameUsageBitMap; // 0 -> not used, 1 -> used
 
 // considerei a alternativa de alocar dinamicamente com maloc + realoc quando necessário incrementar,
@@ -29,6 +30,7 @@ int allocateFrame()
   {
     if (frameUsageBitMap[i] == 0)
     {
+      numberOfUsedFrames++;
       frameUsageBitMap[i] = 1;
       return i;
     }
@@ -107,6 +109,29 @@ void createNewProcess()
   free(processVirtualMemory);
 }
 
+void showCurrentPhysicalMemoryState()
+{
+  int freeMemoryInBytes = (numberOfFrames - numberOfUsedFrames) * pageSizeInBytes;
+  float freeMemoryPercentage = ((float)freeMemoryInBytes / (float)physicalMemorySizeInBytes) * 100;
+  printf("Memória física livre: %.2f%%/100%% | %d/%d Bytes\n", freeMemoryPercentage, freeMemoryInBytes, physicalMemorySizeInBytes);
+  printf("Visualização dos frames:\n\n");
+
+  for (int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++)
+  {
+    printf("Frame %d: ", frameIndex);
+    for (int frameOffset = 0; frameOffset < pageSizeInBytes; frameOffset++)
+    {
+      int offsetFromPhysicalMemoryPointer = (frameIndex * pageSizeInBytes) + frameOffset;
+      printf("%c", physicalMemory[offsetFromPhysicalMemoryPointer]);
+    }
+    printf("\n");
+  }
+
+  char c;
+  printf("\n\n Escreva alguma letra e aperte enter para voltar a tela inicial.");
+  scanf(" %c", &c);
+}
+
 int main(int argc, char *argv[])
 {
   if (argc < 4)
@@ -140,6 +165,7 @@ int main(int argc, char *argv[])
     switch (promptAnswer)
     {
     case 1:
+      showCurrentPhysicalMemoryState();
       break;
     case 2:
     {
