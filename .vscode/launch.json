@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug C/C++ on Mac",
+      "type": "lldb", // Tells VS Code to use the CodeLLDB extension
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": ["8", "1024", "2048"], // <--- Your arguments passed perfectly
+      "cwd": "${fileDirname}",
+      "preLaunchTask": "C/C++: gcc build active file" // Runs your existing tasks.json first
+    }
+  ]
+}

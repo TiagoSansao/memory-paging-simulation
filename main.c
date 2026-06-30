@@ -2,13 +2,26 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+typedef struct
+{
+  int id;
+  int numberOfPages;
+  int *pageMap;
+} ProcessDescriptor;
+
 unsigned int pageSizeInBytes;
 unsigned int physicalMemorySizeInBytes;
 unsigned int maximumProcessSizeInBytes;
 
 char *physicalMemory;
 unsigned int numberOfFrames;
-char *frameUsageBitMap;
+char *frameUsageBitMap; // 0 -> not used, 1 -> used
+
+// considerei a alternativa de alocar dinamicamente com maloc + realoc quando necessário incrementar,
+// mas acho que daí fugiria muito do objetivo desse trabalho. Segui com um array de tamanho fixo para simplificar
+#define MAX_PROCESSES_QTD 100
+ProcessDescriptor processDescriptorList[MAX_PROCESSES_QTD];
+unsigned int processCounter = 0;
 
 int allocateFrame()
 {
@@ -34,9 +47,64 @@ void copyPageContentToFrame(char *processVirtualMemory, int pageIndex, int alloc
 
   for (int j = 0; j < pageSizeInBytes; j++)
   {
-
     frameAddress[j] = pageAddress[j];
   }
+}
+
+void fillRandomCharacters(char *address, int maxOffset)
+{
+  for (int offset = 0; offset < maxOffset; offset++)
+  {
+    address[offset] = 'A' + (random() % 26);
+  }
+}
+
+void createNewProcess()
+{
+  int identifier, memoryNeededInBytes;
+  bool validAnswer = false;
+
+  while (!validAnswer)
+  {
+    printf("Digite um inteiro identificador do processo e a memória que ele precisará em bytes, separados por espaço. Ex.: \"1 512\"\n");
+    scanf("%d %d", &identifier, &memoryNeededInBytes);
+
+    if (memoryNeededInBytes > maximumProcessSizeInBytes)
+    {
+      printf("A memória solicitada ao processo não pode ser maior que a memória máxima definida na inicialização do programa [%d Bytes].\n", maximumProcessSizeInBytes);
+      validAnswer = false;
+    }
+
+    validAnswer = true;
+  }
+
+  ProcessDescriptor *processDescriptor = &processDescriptorList[processCounter];
+  (*processDescriptor).id = identifier;
+
+  char *processVirtualMemory = malloc(sizeof(char) * memoryNeededInBytes);
+  fillRandomCharacters(processVirtualMemory, memoryNeededInBytes);
+
+  processDescriptor->numberOfPages = memoryNeededInBytes / pageSizeInBytes;
+
+  processDescriptor->pageMap = malloc(sizeof(int) * processDescriptor->numberOfPages);
+
+  for (int pageIndex = 0; pageIndex < processDescriptor->numberOfPages; pageIndex++)
+  {
+    int allocatedFrameIndex = allocateFrame();
+    if (allocatedFrameIndex == -1)
+    {
+      printf("[ERRO] Não foi possível alocar inteiramente o processo na memória física, pois todos os quadros estão sendo utilizados\n");
+      printf("E este gerenciador de memória não tem algoritmo de substituição :/\n");
+      return;
+    }
+
+    copyPageContentToFrame(processVirtualMemory, pageIndex, allocatedFrameIndex);
+
+    processDescriptor->pageMap[pageIndex] = allocatedFrameIndex;
+  }
+
+  processCounter++;
+  free(processVirtualMemory);
 }
 
 int main(int argc, char *argv[])
@@ -74,45 +142,10 @@ int main(int argc, char *argv[])
     case 1:
       break;
     case 2:
-      int identifier, memoryNeededInBytes;
-      bool validAnswer = false;
-
-      while (!validAnswer)
-      {
-        printf("Digite um inteiro identificador do processo e a memória que ele precisará em bytes, separados por espaço. Ex.: \"1 512\"\n");
-        scanf("%d %d", &identifier, &memoryNeededInBytes);
-
-        if (memoryNeededInBytes > maximumProcessSizeInBytes)
-        {
-          printf("A memória solicitada ao processo não pode ser maior que a memória máxima definida na inicialização do programa [%d Bytes].\n", maximumProcessSizeInBytes);
-          validAnswer = false;
-        }
-
-        validAnswer = true;
-      }
-
-      char *processVirtualMemory = malloc(sizeof(char) * memoryNeededInBytes);
-
-      int numberOfPages = memoryNeededInBytes / pageSizeInBytes;
-
-      int *pageMap = malloc(sizeof(int) * numberOfPages);
-
-      for (int pageIndex = 0; pageIndex < numberOfPages; pageIndex++)
-      {
-        int allocatedFrameIndex = allocateFrame();
-        if (allocatedFrameIndex == -1)
-        {
-          printf("[ERRO] Não foi possível alocar inteiramente o processo na memória física, pois todos os quadros estão sendo utilizados\n");
-          printf("E este gerenciador de memória não tem algoritmo de substituição :/\n");
-          break;
-        }
-
-        copyPageContentToFrame(processVirtualMemory, pageIndex, allocatedFrameIndex);
-
-        pageMap[pageIndex] = allocatedFrameIndex;
-      }
-
+    {
+      createNewProcess();
       break;
+    }
     case 3:
 
       break;
